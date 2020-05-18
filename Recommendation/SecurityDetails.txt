@@ -1,0 +1,679 @@
+import React, {Component} from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  SafeAreaView,
+  Image,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+} from 'react-native';
+import {List, ListItem} from 'react-native-elements';
+import AsyncStorage from '@react-native-community/async-storage';
+import colors from '../../config/color';
+import {connect} from 'react-redux';
+import moment from 'moment';
+
+class RecommendSecurity extends Component {
+  static navigationOptions = ({navigation}) => {
+    return {
+      title: navigation.getParam('Title', 'Security'),
+      headerStyle: {
+        backgroundColor: navigation.getParam('BackgroundColor', '#f4f6f5'),
+      },
+      headerTintColor: navigation.getParam('HeaderTintColor', '#000000'),
+      headerTitleStyle: {
+        fontWeight: navigation.getParam('fontWeight', 'bold'),
+      },
+    };
+  };
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      expanded: false,
+      expanded1: false,
+      expanded2: false,
+      HighSecurity: [],
+      MediumSecurity: [],
+      LowSecurity: [],
+      HighSecurityProblem: [],
+      MediumSecurityProblem: [],
+      LowSecurityProblem: [],
+      HighSecurityDate: '',
+      MediumSecurityDate: '',
+      LowSecurityDate: '',
+    };
+    if (Platform.OS === 'android') {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+    this.icons = {
+      up: require('../../image/chevron-up.png'),
+      down: require('../../image/chevron-down.png'),
+    };
+
+    this.icons1 = {
+      up: require('../../image/chevron-up.png'),
+      down: require('../../image/chevron-down.png'),
+    };
+
+    this.icons2 = {
+      up: require('../../image/chevron-up.png'),
+      down: require('../../image/chevron-down.png'),
+    };
+  }
+
+  changeLayout = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    this.setState({expanded: !this.state.expanded});
+  };
+
+  changeLayout1 = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    this.setState({expanded1: !this.state.expanded1});
+  };
+
+  changeLayout2 = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    this.setState({expanded2: !this.state.expanded2});
+  };
+
+  componentDidMount = async () => {
+    const SubIndex = await this.getRecIndex();
+    await this.securityCalculation(SubIndex);
+  };
+
+  getRecIndex = async () => {
+    return new Promise(resolve =>
+      setTimeout(() => {
+        const code = AsyncStorage.getItem('recIndex');
+        resolve(code);
+      }),
+    );
+  };
+
+  securityCalculation = async i => {
+    try {
+      const dataObj = this.props.recData;
+      const subscription = dataObj.subscriptions;
+
+      const values = subscription[i].recommendations.value;
+
+      let highNumber = 0;
+      let mediumNumber = 0;
+      let lowNumber = 0;
+      let index = [];
+      let index1 = [];
+      let index2 = [];
+
+      if (values.length > 0) {
+        for (let i = 0; i < values.length; i++) {
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'High'
+          ) {
+            highNumber++;
+          }
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'Medium'
+          ) {
+            mediumNumber++;
+          }
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'Low'
+          ) {
+            lowNumber++;
+          }
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'High'
+          ) {
+            index.push({
+              field: values[i].properties.impactedField,
+              value: values[i].properties.impactedValue,
+              problem: values[i].properties.shortDescription.problem,
+            });
+            const jsonObj = index.map(JSON.stringify);
+            const uniqueSet = new Set(jsonObj);
+            const uniqueArray = Array.from(uniqueSet).map(JSON.parse);
+            this.setState({
+              HighSecurityProblem: uniqueArray,
+            });
+          }
+
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'Medium'
+          ) {
+            index1.push({
+              field: values[i].properties.impactedField,
+              value: values[i].properties.impactedValue,
+              problem: values[i].properties.shortDescription.problem,
+            });
+            const jsonObj = index1.map(JSON.stringify);
+            const uniqueSet = new Set(jsonObj);
+            const uniqueArray = Array.from(uniqueSet).map(JSON.parse);
+            this.setState({
+              MediumSecurityProblem: uniqueArray,
+            });
+          }
+
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'Low'
+          ) {
+            index2.push({
+              field: values[i].properties.impactedField,
+              value: values[i].properties.impactedValue,
+              problem: values[i].properties.shortDescription.problem,
+            });
+            const jsonObj = index2.map(JSON.stringify);
+            const uniqueSet = new Set(jsonObj);
+            const uniqueArray = Array.from(uniqueSet).map(JSON.parse);
+            this.setState({
+              LowSecurityProblem: uniqueArray,
+            });
+          }
+
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'Medium'
+          ) {
+            this.setState({
+              MediumSecurityDate: values[i].properties.lastUpdated,
+            });
+          }
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'High'
+          ) {
+            this.setState({
+              HighSecurityDate: values[i].properties.lastUpdated,
+            });
+          }
+          if (
+            values[i].properties.category === 'Security' &&
+            values[i].properties.impact === 'Low'
+          ) {
+            this.setState({
+              LowSecurityDate: values[i].properties.lastUpdated,
+            });
+          }
+        }
+        this.setState({
+          HighSecurity: highNumber,
+          MediumSecurity: mediumNumber,
+          LowSecurity: lowNumber,
+          //HighSecurityProblem: index,
+        });
+      }
+    } catch (error) {}
+  };
+
+  render() {
+    const {
+      HighSecurity,
+      MediumSecurity,
+      LowSecurity,
+      HighSecurityDate,
+      HighSecurityProblem,
+      MediumSecurityDate,
+      MediumSecurityProblem,
+      LowSecurityDate,
+      LowSecurityProblem,
+    } = this.state;
+    let icon = this.icons['down'];
+    let icon1 = this.icons1['down'];
+    let icon2 = this.icons2['down'];
+    // //console.log('recdataList items ==', this.state.abc);
+    if (this.state.expanded) {
+      icon = this.icons['up'];
+    }
+
+    if (this.state.expanded1) {
+      icon1 = this.icons1['up'];
+    }
+    if (this.state.expanded2) {
+      icon2 = this.icons2['up'];
+    }
+    return (
+      <SafeAreaView style={{flex: 1}}>
+        <Image
+          source={require('../../image/azure_icon.png')}
+          style={{
+            alignSelf: 'flex-end',
+            width: 30,
+            height: 30,
+            marginTop: 10,
+            marginRight: 25,
+            margin: 6,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+
+            padding: 5,
+          }}>
+          <Text style={{marginLeft: 20, color: colors.lightgray}}>Impact</Text>
+          <View
+            style={[
+              styles.securityDot,
+              {
+                backgroundColor: '#C85250',
+              },
+            ]}
+          />
+
+          <Text style={{fontSize: 15, marginLeft: 6}}>High</Text>
+
+          <View
+            style={[
+              styles.securityDot,
+              {
+                backgroundColor: '#FAD02C',
+              },
+            ]}
+          />
+          <Text style={{fontSize: 15, marginLeft: 6}}>Medium</Text>
+
+          <View
+            style={[
+              styles.securityDot,
+              {
+                backgroundColor: '#41729F',
+              },
+            ]}
+          />
+          <Text style={{fontSize: 15, marginLeft: 6}}>Low</Text>
+        </View>
+        <ScrollView style={{marginBottom: 20}}>
+          <View style={styles.container}>
+            <View style={styles.btnTextHolder}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={
+                  HighSecurity == 0 ? !this.changeLayout : this.changeLayout
+                }
+                style={
+                  HighSecurity
+                    ? !this.state.expanded
+                      ? styles.Btn
+                      : styles.Btns
+                    : styles.Btns
+                }>
+                <Text style={styles.btnText}>
+                  {HighSecurity == 0
+                    ? ' 0 High Impact'
+                    : HighSecurity <= 1
+                    ? HighSecurity + ' ' + 'high Impact'
+                    : HighSecurity + ' ' + 'high Impacts'}
+                </Text>
+                {HighSecurity ? (
+                  <Image style={styles.buttonImage} source={icon} />
+                ) : null}
+              </TouchableOpacity>
+
+              <View
+                style={{
+                  height: HighSecurity ? (!this.state.expanded ? null : 0) : 0,
+                  overflow: 'hidden',
+                }}>
+                <FlatList
+                  data={HighSecurityProblem}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({item}) => (
+                    <View style={[styles.flatContainer]}>
+                      <View style={{padding: 8}}>
+                        <Text style={[styles.flatProblem]}>{item.problem}</Text>
+
+                        <Text style={[styles.flatImpact]}>
+                          Impacted Resources
+                        </Text>
+                        <Text style={[styles.ImpField]}>
+                          {item.field.split('/')[1]}
+                        </Text>
+
+                        <Text style={{marginLeft: 12, marginTop: 2}}>
+                          {item.value}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+
+                {/* <Text style={[styles.impactText]}>Impacted Resources</Text>
+                <Text style={{marginLeft: 20, fontSize: 15}}>
+                  {HighSecurity <= 1
+                    ? HighSecurity + ' ' + 'subscription'
+                    : HighSecurity + ' ' + 'Subscriptions'}
+                </Text> */}
+                <Text style={[styles.recDate]}>
+                  Last Updated:{' '}
+                  {moment(HighSecurityDate, 'YYYY-MM-DD').format('YYYY-MM-DD')}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.container}>
+            <View style={styles.btnTextHolder1}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={
+                  MediumSecurity === 0
+                    ? !this.changeLayout1
+                    : this.changeLayout1
+                }
+                style={
+                  MediumSecurity
+                    ? !this.state.expanded1
+                      ? styles.Btn1
+                      : styles.Btn1s
+                    : styles.Btn1s
+                }>
+                <Text style={styles.btnText}>
+                  {MediumSecurity == 0
+                    ? '0 medium Impact'
+                    : MediumSecurity <= 1
+                    ? MediumSecurity + ' ' + 'medium Impact'
+                    : MediumSecurity + ' ' + 'medium Impacts'}
+                </Text>
+                {MediumSecurity ? (
+                  <Image style={styles.buttonImage} source={icon1} />
+                ) : null}
+              </TouchableOpacity>
+
+              <View
+                style={{
+                  height: MediumSecurity
+                    ? !this.state.expanded1
+                      ? null
+                      : 0
+                    : 0,
+                  overflow: 'hidden',
+                }}>
+                <FlatList
+                  data={MediumSecurityProblem}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({item}) => (
+                    <View style={[styles.flatContainer]}>
+                      <View style={{padding: 8}}>
+                        <Text style={[styles.flatProblem]}>{item.problem}</Text>
+
+                        <Text style={[styles.flatImpact]}>
+                          Impacted Resources
+                        </Text>
+                        <Text style={[styles.ImpField]}>
+                          {item.field.split('/')[1]}
+                        </Text>
+
+                        <Text style={{marginLeft: 12, marginTop: 2}}>
+                          {item.value}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+
+                {/* <Text style={[styles.impactText]}>Impacted Resources</Text>
+                <Text style={{marginLeft: 20, fontSize: 15}}>
+                  {MediumSecurity <= 1
+                    ? MediumSecurity + ' ' + 'subscription'
+                    : MediumSecurity + ' ' + 'Subscriptions'}
+                </Text> */}
+                <Text style={[styles.recDate]}>
+                  Last Updated:{' '}
+                  {moment(MediumSecurityDate, 'YYYY-MM-DD').format(
+                    'YYYY-MM-DD',
+                  )}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.container}>
+            <View style={styles.btnTextHolder2}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={
+                  LowSecurity === 0 ? !this.changeLayout2 : this.changeLayout2
+                }
+                style={
+                  LowSecurity
+                    ? !this.state.expanded2
+                      ? styles.Btn2
+                      : styles.Btn2s
+                    : styles.Btn2s
+                }>
+                <Text style={styles.btnText}>
+                  {LowSecurity == 0
+                    ? '0 low Impact'
+                    : LowSecurity <= 1
+                    ? LowSecurity + ' ' + 'low Impact'
+                    : +LowSecurity + ' ' + 'low Impacts'}
+                </Text>
+                {LowSecurity ? (
+                  <Image style={styles.buttonImage} source={icon2} />
+                ) : null}
+              </TouchableOpacity>
+
+              <View
+                style={{
+                  height: LowSecurity ? (!this.state.expanded2 ? null : 0) : 0,
+                  overflow: 'hidden',
+                }}>
+                <FlatList
+                  data={LowSecurityProblem}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({item}) => (
+                    <View style={[styles.flatContainer]}>
+                      <View style={{padding: 8}}>
+                        <Text style={[styles.flatProblem]}>{item.problem}</Text>
+
+                        <Text style={[styles.flatImpact]}>
+                          Impacted Resources
+                        </Text>
+                        <Text style={[styles.ImpField]}>
+                          {item.field.split('/')[1]}
+                        </Text>
+
+                        <Text style={{marginLeft: 12, marginTop: 2}}>
+                          {item.value}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+
+                {/* <Text style={[styles.impactText]}>Impacted Resources</Text>
+                <Text style={{marginLeft: 20, fontSize: 15}}>
+                  {LowSecurity <= 1
+                    ? LowSecurity + ' ' + 'subscription'
+                    : LowSecurity + ' ' + 'Subscriptions'}
+                </Text> */}
+                <Text style={[styles.recDate]}>
+                  Last Updated:{' '}
+                  {moment(LowSecurityDate, 'YYYY-MM-DD').format('YYYY-MM-DD')}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    //flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    marginTop: 13,
+    marginBottom: 13,
+    // elevation: 5,
+    paddingTop: Platform.OS === 'ios' ? 20 : 0,
+  },
+  impactText: {
+    marginLeft: 20,
+    color: colors.lightgray,
+    fontSize: 17,
+  },
+  securityDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 8,
+    shadowRadius: 5,
+    elevation: 4,
+    marginTop: 4,
+    marginLeft: 20,
+  },
+  buttonImage: {
+    alignSelf: 'center',
+    width: 15,
+    height: 15,
+  },
+
+  text: {
+    fontSize: 16,
+    color: 'black',
+    padding: 3,
+    marginLeft: 20,
+  },
+
+  btnText: {
+    color: 'black',
+    marginRight: 5,
+    fontSize: 18,
+    alignSelf: 'flex-start',
+  },
+
+  btnTextHolder: {
+    borderWidth: 1,
+    borderRadius: 20,
+    borderColor: colors.red,
+  },
+  btnTextHolder1: {
+    borderWidth: 1,
+    borderRadius: 20,
+    borderColor: colors.yellowRec,
+  },
+  btnTextHolder2: {
+    borderWidth: 1,
+    borderRadius: 20,
+    borderColor: colors.blueRec,
+  },
+
+  Btn: {
+    padding: 25,
+    backgroundColor: '#f0e0e0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  Btns: {
+    padding: 25,
+    backgroundColor: '#f0e0e0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  Btn1: {
+    padding: 25,
+    backgroundColor: '#ffecd1',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  Btn1s: {
+    padding: 25,
+    backgroundColor: '#ffecd1',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  Btn2: {
+    padding: 25,
+    backgroundColor: '#ccdcea',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  Btn2s: {
+    padding: 25,
+    backgroundColor: '#ccdcea',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  flatContainer: {
+    flexDirection: 'column',
+    width: '88%',
+    elevation: 4,
+    borderRadius: 4,
+    backgroundColor: '#ffffff',
+    marginTop: 21,
+    marginLeft: 22,
+    marginBottom: 4,
+    padding: 8,
+  },
+  flatProblem: {
+    marginLeft: 12,
+    marginBottom: -10,
+    fontSize: 16,
+  },
+  flatImpact: {
+    marginTop: 15,
+    marginLeft: 12,
+    color: colors.lightblack,
+    fontSize: 15,
+  },
+  recDate: {
+    fontSize: 15,
+    alignSelf: 'flex-end',
+    padding: 20,
+    color: colors.lightgray,
+  },
+  ImpField: {
+    marginTop: 8,
+    fontSize: 15,
+    color: colors.lightgray,
+    marginLeft: 12,
+  },
+});
+
+export default connect(
+  state => {
+    return {
+      recData: state.recommendReducer.recData,
+      loading: state.recommendReducer.loading,
+      error: state.recommendReducer.error,
+    };
+  },
+
+  d => {
+    return {
+      d: d,
+    };
+  },
+)(RecommendSecurity);

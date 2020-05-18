@@ -1,0 +1,324 @@
+
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      All: false,
+      Azure: false,
+      AWS: false,
+      GCP: false,
+      DemoAll: false,
+      DemoAzure: false,
+      DemoAWS: false,
+      DemoGCP: false,
+
+      expanded: false,
+      SubCount: '',
+      subscriptionName: [],
+      SelectedValue: '',
+      SelectedItem: '',
+      AzureDataFilter: [],
+
+      expanded1: false,
+      SubCount1: '',
+      subscriptionName1: [],
+      SelectedValue1: '',
+      SelectedItem1: '',
+      AwsDataFilter: [],
+
+
+  setRecSub1 = data => {
+    console.log('selected index ---', data);
+    try {
+      const content = {
+        index: data,
+        value: this.state.SelectedItem1,
+      };
+      this.props.d({
+        type: 'ID',
+        payload: content,
+      });
+      this.validateAWSVendor();
+    } catch (error) {}
+  };
+
+  awsSubCalculate = () => {
+    try {
+      // ---------------- subscription for yearly calculation ------------------
+      const subaws = this.props.aws.aws.data.yearly;
+      let subawsdata = [];
+      for (let t = 0; t < subaws.length; t++) {
+        const tenantObj = subaws[t].tenants;
+        for (let s = 0; s < tenantObj.length; s++) {
+          const subscription = tenantObj[s].subscriptions;
+          // console.log('aws awss sub --', subscription);
+          for (let i = 0; i < subscription.length; i++) {
+            subawsdata.push({
+              Subid: subscription[i].subscriptionId,
+              allSub: 'All Subscriptions',
+              allindex: -1,
+              index: t,
+            });
+            const jsonObj = subawsdata.map(JSON.stringify);
+            const uniqueSet = new Set(jsonObj);
+            const uniqueArray = Array.from(uniqueSet).map(JSON.parse);
+            this.setState({
+              subscriptionName1: uniqueArray,
+              SelectedItem1: subscription[0].subscriptionId,
+              SubCount1: subaws.length,
+            });
+          }
+        }
+      }
+    } catch (error) {}
+  };
+
+
+  AWSDashboard = () => {
+    ////console.log('aws spend by category data **', this.props.awsData);
+    const {index} = this.props;
+    console.log('SubCount aws index ---', index);
+    const {
+      SubCount1,
+      SelectedItem1,
+      SelectedValue1,
+      subscriptionName1,
+    } = this.state;
+    let icon = this.icons['down'];
+    if (this.state.expanded1) {
+      icon = this.icons['up'];
+    }
+
+    return (
+      <View style={{marginTop: 0}}>
+        <DashboardText data={this.props.aws.aws.data} />
+
+        <View
+          style={{
+            backgroundColor: colors.lightblack,
+            borderRadius: 12,
+            borderWidth: 0.1,
+            marginTop: 15,
+            marginBottom: 7,
+            marginLeft: 8,
+            marginRight: 8,
+            padding: 0,
+          }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              marginTop: 10,
+              marginLeft: 8,
+              marginRight: 8,
+              marginBottom: 8,
+            }}>
+            <TouchableOpacity onPress={() => this.validateAllVendor()}>
+              <View style={styles.allInactive_style}>
+                <View
+                  style={{
+                    flexDirection: 'column',
+                    justifyContent: 'space-evenly',
+                    alignItems: 'center',
+                  }}>
+                  <Image
+                    source={require('../image/azure.png')}
+                    style={{
+                      margin: 3,
+                      height: 15,
+                      width: 15,
+                      tintColor: colors.lightgray,
+                    }}
+                  />
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-evenly',
+                      alignItems: 'center',
+                    }}>
+                    <Image
+                      source={require('../image/aws-logo.png')}
+                      style={{
+                        margin: 3,
+                        height: 15,
+                        width: 23,
+                        tintColor: colors.lightgray,
+                      }}
+                    />
+                    <Image
+                      source={require('../image/gcp.png')}
+                      style={{
+                        margin: 3,
+                        height: 15,
+                        width: 15,
+                        tintColor: colors.lightgray,
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => this.validateAzureVendor()}>
+              <View style={styles.inactive_style}>
+                <Image
+                  source={require('../image/azure.png')}
+                  style={{
+                    margin: 10,
+                    height: 20,
+                    width: 20,
+                    tintColor: colors.lightgray,
+                  }}
+                />
+                <Text style={{color: colors.lightgray, fontWeight: 'bold'}}>
+                  Azure
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => this.validateAWSVendor()}>
+              <View style={styles.awsActive_style}>
+                <Image
+                  source={require('../image/aws-logo.png')}
+                  style={{
+                    margin: 10,
+                    height: 20,
+                    width: 30,
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => this.validateGCPVendor()}>
+              <View style={styles.inactive_style}>
+                <Image
+                  source={require('../image/gcp.png')}
+                  style={{
+                    margin: 10,
+                    height: 20,
+                    width: 20,
+                    tintColor: colors.lightgray,
+                  }}
+                />
+                <Text style={{color: colors.lightgray, fontWeight: 'bold'}}>
+                  GCP
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text
+          style={{
+            color: colors.white,
+            fontSize: 18,
+            marginTop: 4,
+            marginBottom: 8,
+            marginLeft: 8,
+          }}>
+          Subscription
+        </Text>
+
+        <View style={styles.container}>
+          <View style={styles.btnTextHolder}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={
+                SubCount1 == 1 ? !this.changeLayout1 : this.changeLayout1
+              }
+              style={
+                subscriptionName1
+                  ? this.state.expanded1
+                    ? styles.Btn
+                    : styles.Btns
+                  : styles.Btns
+              }>
+              <Text style={{fontSize: 14, color: colors.white}}>
+                {SubCount1
+                  ? index.payload == undefined
+                    ? 'All subscriptions' + `(${SubCount1})`
+                    : index.payload >= 0
+                    ? SelectedItem1
+                    : ''
+                  : ''}
+                {/* {SelectedValue1 >= 0 ? SelectedItem1 : 'Select Subscription'} */}
+              </Text>
+
+              <Image style={styles.buttonImage} source={icon} />
+            </TouchableOpacity>
+
+            <View
+              style={{
+                height: this.state.expanded1 ? null : 0,
+                overflow: 'hidden',
+              }}>
+              <FlatList
+                data={subscriptionName1}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({item}) => (
+                  <View
+                    style={{
+                      width: '92%',
+                      elevation: 4,
+                      borderRadius: 4,
+                      backgroundColor: colors.lightblack,
+
+                      marginTop: 8,
+                      marginLeft: 15,
+                      marginBottom: 8,
+                      padding: 8,
+                    }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        this.setState({
+                          SelectedValue1: item.index,
+                          SelectedItem1: item.Subid,
+                        });
+                        this.setRecSub1(item.index);
+
+                        this.changeLayout1();
+                      }}>
+                      <Text
+                        style={{
+                          marginLeft: 10,
+                          // marginBottom: 8,
+                          color: colors.white,
+                          justifyContent: 'center',
+                          alignSelf: 'center',
+                        }}>
+                        {SubCount1
+                          ? SelectedValue1 === ''
+                            ? item.Subid
+                            : SelectedValue1 == item.index
+                            ? item.allSub
+                            : item.Subid
+                          : ''}
+                        {/* {SelectedValue1 == item.index
+                          ? 'All subscriptions'
+                          : item.Subid} */}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            </View>
+          </View>
+        </View>
+
+        <Carousel1 data={this.props.aws.aws.data} index={this.props.index} />
+        {/* <Carousel1 /> */}
+        <StackedColumnChartForSubscriptions1
+        // data={this.props.aws.aws.data}
+        // index={this.props.index}
+        />
+        <StackedColumnSeriesChart1 data={this.props.aws.aws.data} />
+        <DoughnutServicesChart1 data={this.props.aws.aws.data} />
+        <DoughnutLocationsChart1 data={this.props.aws.aws.data} />
+        <View style={{marginBottom: 7}}>
+          <AwsSpendByCategory />
+        </View>
+      </View>
+    );
+  };

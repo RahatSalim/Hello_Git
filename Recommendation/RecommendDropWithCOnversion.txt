@@ -1,0 +1,679 @@
+import React, {Component} from 'react';
+import {
+  View,
+  Text,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  FlatList,
+  Picker,
+} from 'react-native';
+
+import {connect} from 'react-redux';
+import {REC_LOADING} from '../actions/recommendactions';
+import AsyncStorage from '@react-native-community/async-storage';
+import colors from '../../config/color';
+import Toast from 'react-native-simple-toast';
+
+class Recommendations extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      Security: [],
+      Availability: [],
+      excellence: [],
+      Cost: [],
+      Performance: [],
+      subscriptionName: [],
+      SelectedValue: 0,
+      SelectedItem: '',
+      SubCount: '',
+      expanded: false,
+    };
+    if (Platform.OS === 'android') {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+    this.icons = {
+      up: require('../../image/chevron-up.png'),
+      down: require('../../image/chevron-down.png'),
+    };
+  }
+  changeLayout = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    this.setState({expanded: !this.state.expanded});
+  };
+
+  async componentDidMount() {
+    await this.ValidateRecommendAccount();
+  }
+
+  ValidateRecommendAccount = async () => {
+    //console.log('comes to the ValidateRecommendAccount function');
+    try {
+      const tenants = await this.gettingTenantID();
+      if (tenants !== null) {
+        this.dispatchrecommend();
+      } else {
+        this.props.navigation.navigate('AddAzure');
+        Toast.show("You don't have any tenant add account");
+      }
+    } catch (error) {}
+  };
+
+  SubCalculate = async () => {
+    try {
+      const sub1 = this.props.recData;
+      const subscription = sub1.subscriptions;
+      let sub = [];
+      for (let i = 0; i < subscription.length; i++) {
+        sub.push({Subid: subscription[i].subscriptionId, index: i});
+        const jsonObj = sub.map(JSON.stringify);
+        const uniqueSet = new Set(jsonObj);
+        const uniqueArray = Array.from(uniqueSet).map(JSON.parse);
+        this.setState({
+          subscriptionName: uniqueArray,
+          SelectedItem: subscription[0].subscriptionId,
+          SubCount: subscription.length,
+        });
+      }
+      this.recommendCalculation();
+    } catch (error) {}
+  };
+
+  // getRecIndex = async () => {
+  //   return new Promise(resolve =>
+  //     setTimeout(() => {
+  //       const code = AsyncStorage.getItem('recIndex');
+  //       resolve(code);
+  //     }),
+  //   );
+  // };
+
+  recommendCalculation = () => {
+    try {
+      const dataObj = this.props.recData;
+      const subscription = dataObj.subscriptions;
+
+      let securityNumber = 0;
+      let availabilityNumber = 0;
+      let excellenceNumber = 0;
+      let costNumber = 0;
+      let performanceNumber = 0;
+      const i = this.state.SelectedValue;
+
+      const values = subscription[i].recommendations.value;
+
+      if (values.length > 0) {
+        for (let i = 0; i < values.length; i++) {
+          if (values[i].properties.category === 'Security') {
+            securityNumber++;
+          }
+          if (values[i].properties.category === 'HighAvailability') {
+            availabilityNumber++;
+          }
+          if (values[i].properties.category === 'OperationalExcellence') {
+            excellenceNumber++;
+          }
+          if (values[i].properties.category === 'Cost') {
+            costNumber++;
+          }
+          if (values[i].properties.category === 'Performance') {
+            performanceNumber++;
+          }
+        }
+        this.setState({
+          Security: securityNumber,
+          Availability: availabilityNumber,
+          excellence: excellenceNumber,
+          Cost: costNumber,
+          Performance: performanceNumber,
+        });
+      }
+    } catch (error) {}
+  };
+
+  gettingTenantID = async () => {
+    return new Promise(resolve =>
+      setTimeout(() => {
+        const tenantCode = AsyncStorage.getItem('tenantID');
+        resolve(tenantCode);
+      }),
+    );
+  };
+
+  setRecSub = async data => {
+    console.log('selected index ---', data);
+    try {
+      await AsyncStorage.setItem('recIndex', JSON.stringify(data));
+      this.recommendCalculation();
+    } catch (error) {}
+  };
+
+  dispatchrecommend = async () => {
+    //console.log('comes to the dispatchrecommend function');
+    try {
+      await AsyncStorage.setItem(
+        'recIndex',
+        JSON.stringify(this.state.SelectedValue),
+      );
+      const tenant = await this.gettingTenantID();
+      const datarec = {
+        tenantID: tenant,
+        customerID: this.props.users.customerID,
+      };
+      this.props.d({
+        type: REC_LOADING,
+        payload: datarec,
+      });
+
+      // console.log('recData recData ---', this.props.recData);
+      if (this.props.recData !== undefined) {
+        // this.recommendCalculation();
+        this.SubCalculate();
+      } else {
+        this.ValidateRecommendAccount();
+      }
+    } catch (error) {}
+  };
+
+  render() {
+    const {
+      Cost,
+      Performance,
+      Security,
+      Availability,
+      excellence,
+      subscriptionName,
+      SelectedItem,
+      SelectedValue,
+      SubCount,
+    } = this.state;
+    let icon = this.icons['down'];
+    if (this.state.expanded) {
+      icon = this.icons['up'];
+    }
+    if (this.props.loading) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            // backgroundColor: '#ffffff',
+          }}>
+          <Text style={{fontSize: 15, color: colors.darkblack}}>
+            Loading Recommendations...
+          </Text>
+        </View>
+      );
+    }
+    if (this.props.error) {
+      return (
+        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+          <Text style={{color: colors.red}}>ERROR:{this.props.error}</Text>
+        </View>
+      );
+    }
+    if (this.state.SubCount == 0) {
+      this.SubCalculate();
+    }
+    const Opexcellence =
+      'You are following all of our operational excellence recommendations';
+    return (
+      <SafeAreaView style={{flex: 1}}>
+        <Text style={{fontSize: 16, color: colors.lightgray, marginLeft: 10}}>
+          Directory
+        </Text>
+        <Text style={{fontSize: 18, marginLeft: 10}}>SynapsesAI</Text>
+
+        <Text
+          style={{
+            color: colors.lightgray,
+            marginTop: 10,
+            fontSize: 15,
+            marginLeft: 10,
+          }}>
+          Subscription
+        </Text>
+        <View style={styles.container}>
+          <View style={styles.btnTextHolder}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={SubCount == 1 ? !this.changeLayout : this.changeLayout}
+              style={
+                subscriptionName
+                  ? this.state.expanded
+                    ? styles.Btn
+                    : styles.Btns
+                  : styles.Btns
+              }>
+              <Text style={{fontSize: 14}}>
+                {SelectedValue >= 0 ? SelectedItem : 'Select Subscription'}
+              </Text>
+
+              <Image style={styles.buttonImage} source={icon} />
+            </TouchableOpacity>
+
+            <View
+              style={{
+                height: this.state.expanded ? null : 0,
+                overflow: 'hidden',
+              }}>
+              <FlatList
+                data={subscriptionName}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({item}) => (
+                  <View
+                    style={{
+                      width: '92%',
+                      elevation: 4,
+                      borderRadius: 4,
+                      backgroundColor: '#ffffff',
+                      marginTop: 10,
+                      marginLeft: 15,
+                      marginBottom: 8,
+                      padding: 8,
+                    }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        this.setState({
+                          SelectedValue: item.index,
+                          SelectedItem: item.Subid,
+                        });
+                        this.setRecSub(item.index);
+                        this.changeLayout();
+                      }}>
+                      <Text
+                        style={{
+                          marginLeft: 10,
+                          // marginBottom: 8,
+                          justifyContent: 'center',
+                        }}>
+                        {SelectedValue == item.index ? !item.Subid : item.Subid}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            padding: 5,
+          }}>
+          <View style={[styles.recommendDot, {backgroundColor: '#B2D2A4'}]} />
+          <Text style={{fontSize: 15, marginLeft: 6}}>Good to go!</Text>
+          <View style={[styles.recommendDot, {backgroundColor: '#FFB347'}]} />
+          <Text style={{fontSize: 15, marginLeft: 6}}>
+            Pending recommendations
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'column',
+            padding: 10,
+          }}>
+          <View
+            style={[
+              styles.recommendBox,
+              {
+                backgroundColor: Cost ? '#fff4e5' : '#f7f9f6',
+                borderColor: Cost ? colors.orange : colors.green,
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() =>
+                Cost
+                  ? Cost >= 1
+                    ? this.props.navigation.navigate('RecommendCost')
+                    : !this.props.navigation.navigate('')
+                  : Toast.show('You have no pending recommendations')
+              }>
+              <View style={[styles.row1]}>
+                <View style={[styles.row2]}>
+                  <Image
+                    source={require('../../image/credit-card.png')}
+                    style={{
+                      width: 21,
+                      height: 16,
+                      marginTop: 4,
+                    }}
+                  />
+                  <Text style={[styles.row1Text]}>Cost</Text>
+                </View>
+                {Cost ? (
+                  <Image
+                    source={require('../../image/chevron-right.png')}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      marginTop: 10,
+                    }}
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.row2Text}>
+              {Cost
+                ? Cost <= 1
+                  ? Cost + ' ' + 'recommendation'
+                  : Cost + ' ' + 'recommendations'
+                : 'You are following all of our recommendations.'}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.recommendBox,
+              {
+                backgroundColor: this.state.Security ? '#fff4e5' : '#f7f9f6',
+
+                borderColor: this.state.Security ? colors.orange : colors.green,
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() =>
+                this.state.Security
+                  ? this.state.Security >= 1
+                    ? this.props.navigation.navigate('RecommendSecurity')
+                    : !this.props.navigation.navigate('')
+                  : Toast.show('You have no pending recommendations')
+              }>
+              <View style={[styles.row1]}>
+                <View style={[styles.row2]}>
+                  <Image
+                    source={require('../../image/lock-shield.png')}
+                    style={{
+                      width: 20,
+                      height: 24,
+                      marginTop: 2,
+                    }}
+                  />
+                  <Text style={[styles.row1Text]}>Security</Text>
+                </View>
+                {this.state.Security ? (
+                  <Image
+                    source={require('../../image/chevron-right.png')}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      marginTop: 10,
+                    }}
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+            <Text style={[styles.row2Text]}>
+              {this.state.Security
+                ? this.state.Security <= 1
+                  ? this.state.Security + ' ' + 'recommendation'
+                  : this.state.Security + ' ' + 'recommendations'
+                : 'You are following all of our recommendations'}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.recommendBox,
+              {
+                backgroundColor: this.state.Availability
+                  ? '#fff4e5'
+                  : '#f7f9f6',
+
+                borderColor: this.state.Availability
+                  ? colors.orange
+                  : colors.green,
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() =>
+                this.state.Availability
+                  ? this.state.Availability >= 1
+                    ? this.props.navigation.navigate('RecommendAvailability')
+                    : !this.props.navigation.navigate('')
+                  : Toast.show('You have no pending recommendations.')
+              }>
+              <View style={[styles.row1]}>
+                <View style={[styles.row2]}>
+                  <Image
+                    source={require('../../image/globe.png')}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      marginTop: 2,
+                    }}
+                  />
+                  <Text style={[styles.row1Text]}>High availability</Text>
+                </View>
+                {Availability ? (
+                  <Image
+                    source={require('../../image/chevron-right.png')}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      marginTop: 10,
+                    }}
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+            <Text style={[styles.row2Text]}>
+              {this.state.Availability
+                ? this.state.Availability <= 1
+                  ? this.state.Availability + ' ' + 'recommendation'
+                  : this.state.Availability + ' ' + 'recommendations'
+                : 'You are following all of our recommendations'}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.recommendBox,
+              {
+                backgroundColor: this.state.excellence ? '#fff4e5' : '#f7f9f6',
+
+                borderColor: this.state.excellence
+                  ? colors.orange
+                  : colors.green,
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() => {
+                this.state.excellence
+                  ? this.state.excellence >= 1
+                    ? this.props.navigation.navigate('RecommendExcellence')
+                    : !this.props.navigation.navigate('')
+                  : Toast.show('You have no pending recommendations.');
+              }}>
+              <View style={[styles.row1]}>
+                <View style={[styles.row2]}>
+                  <Image
+                    source={require('../../image/rosette.png')}
+                    style={{
+                      width: 18,
+                      height: 24,
+                      marginTop: 2,
+                    }}
+                  />
+                  <Text style={[styles.row1Text]}>Operational excellence</Text>
+                </View>
+                {excellence ? (
+                  <Image
+                    source={require('../../image/chevron-right.png')}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      marginTop: 10,
+                    }}
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+            <Text style={[styles.row2Text]}>
+              {this.state.excellence
+                ? this.state.excellence <= 1
+                  ? this.state.excellence + ' ' + 'recommendation'
+                  : this.state.excellence + ' ' + 'recommendations'
+                : Opexcellence}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.recommendBox,
+              {
+                backgroundColor: Performance ? '#fff4e5' : '#f7f9f6',
+                borderColor: Performance ? colors.orange : colors.green,
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() =>
+                Performance
+                  ? Performance >= 1
+                    ? this.props.navigation.navigate('RecommendPerformance')
+                    : !this.props.navigation.navigate('')
+                  : Toast.show('You have no pending recommendations')
+              }>
+              <View style={[styles.row1]}>
+                <View style={[styles.row2]}>
+                  <Image
+                    source={require('../../image/bar-chart.png')}
+                    style={{
+                      width: 22,
+                      height: 15,
+                      marginTop: 4,
+                    }}
+                  />
+                  <Text style={[styles.row1Text]}>Performance</Text>
+                </View>
+                {Performance ? (
+                  <Image
+                    source={require('../../image/chevron-right.png')}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      marginTop: 10,
+                    }}
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+            <Text style={[styles.row2Text]}>
+              {Performance
+                ? Performance <= 1
+                  ? Performance + ' ' + 'recommendation'
+                  : Performance + ' ' + 'recommendations'
+                : 'You are following all of our recommendations.'}
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+  recommendBox: {
+    width: '100%',
+    height: 100,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  row1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 8,
+  },
+  row1Text: {
+    marginLeft: 8,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  row2: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    padding: 6,
+  },
+  row2Text: {
+    marginLeft: 15,
+
+    fontSize: 15,
+  },
+  recommendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 8,
+    shadowRadius: 5,
+    elevation: 4,
+    marginTop: 4,
+    marginLeft: 20,
+  },
+  dropdown: {
+    width: '80%',
+  },
+  container: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 13,
+    elevation: 4,
+    paddingTop: Platform.OS === 'ios' ? 20 : 0,
+  },
+  btnTextHolder: {
+    borderWidth: 1,
+    borderRadius: 10,
+    //borderColor: colors.blueRec,
+  },
+  Btn: {
+    padding: 15,
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  Btns: {
+    padding: 15,
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  buttonImage: {
+    alignSelf: 'center',
+    width: 10,
+    height: 10,
+  },
+});
+
+export default connect(
+  state => {
+    return {
+      users: state.userReducer.users,
+      recData: state.recommendReducer.recData,
+      loading: state.recommendReducer.loading,
+      error: state.recommendReducer.error,
+    };
+  },
+
+  d => {
+    return {
+      d: d,
+    };
+  },
+)(Recommendations);
