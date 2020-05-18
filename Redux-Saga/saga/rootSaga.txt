@@ -1,0 +1,30 @@
+import userSaga from './userSaga';
+import postSaga from './postSaga';
+import awsSaga from './awsSaga';
+import allSaga from './allSaga';
+import deleteSaga from './deleteUserSaga';
+import userFormidable from './userFormidable';
+import azureSpentByCategorySaga from './azureSpentByCategorySaga';
+import allSpendByCategorySaga from './allSpendByCategorySaga';
+import awsSpendByCategorySaga from './awsSpendByCategorySaga';
+import recommendSaga from './recommendSaga';
+import indexSaga from './indexSaga';
+import {all} from 'redux-saga/effects';
+
+function* rootSaga() {
+  yield all([
+    userSaga(),
+    postSaga(),
+    awsSaga(),
+    allSaga(),
+    deleteSaga(),
+    userFormidable(),
+    azureSpentByCategorySaga(),
+    allSpendByCategorySaga(),
+    awsSpendByCategorySaga(),
+    recommendSaga(),
+    indexSaga(),
+  ]);
+}
+
+export default rootSaga;

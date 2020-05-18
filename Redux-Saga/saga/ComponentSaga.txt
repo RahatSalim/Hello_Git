@@ -1,0 +1,16 @@
+import {takeLatest, call, put} from 'redux-saga/effects';
+import ServerCall from '../services/ServerCall';
+import colors from '../config/color';
+
+function* getPosts(data) {
+  try {
+    const response = data.payload;
+    yield put({type: 'INDEX', payload: response});
+  } catch (error) {}
+}
+
+function* indexSaga() {
+  yield takeLatest('ID', getPosts);
+}
+
+export default indexSaga;

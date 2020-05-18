@@ -1,0 +1,35 @@
+import {
+  REC_LOADING,
+  REC_SUCCESS,
+  REC_ERROR,
+} from '../components/actions/recommendactions';
+import {RecommendInit} from '../utils/init';
+
+export default function recommendReducer(state = RecommendInit, action) {
+  switch (action.type) {
+    case REC_LOADING: {
+      return {
+        ...state,
+        loading: true,
+        error: '',
+      };
+    }
+    case REC_SUCCESS: {
+      return {
+        ...state,
+        recData: action.data,
+        loading: false,
+      };
+    }
+    case REC_ERROR: {
+      return {
+        ...state,
+        loading: false,
+        error: action.error,
+      };
+    }
+    default: {
+      return state;
+    }
+  }
+}

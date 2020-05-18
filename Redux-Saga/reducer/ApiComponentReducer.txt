@@ -1,0 +1,35 @@
+import {
+  AWS_LOADING,
+  AWS_SUCCESS,
+  AWS_ERROR,
+} from '../components/actions/awsactions';
+import {awsSpentInit} from '../utils/init';
+
+export default function awsSpendReducer(state = awsSpentInit, action) {
+  switch (action.type) {
+    case AWS_LOADING: {
+      return {
+        ...state,
+        loading: true,
+        error: '',
+      };
+    }
+    case AWS_SUCCESS: {
+      return {
+        ...state,
+        awsData: action.data,
+        loading: false,
+      };
+    }
+    case AWS_ERROR: {
+      return {
+        ...state,
+        loading: false,
+        error: action.error,
+      };
+    }
+    default: {
+      return state;
+    }
+  }
+}

@@ -1,0 +1,28 @@
+import {put, takeEvery, takeLatest, call} from 'redux-saga/effects';
+import {
+  AWS_LOADING,
+  AWS_SUCCESS,
+  AWS_ERROR,
+} from '../components/actions/awsactions';
+import ServerCall from '../services/ServerCall';
+import colors from '../config/color';
+
+function* fetchCategoryData(data) {
+  const id = data.payload;
+  try {
+    const res = yield call(
+      ServerCall.fnGetReq,
+      colors.url + `getAwsSpendByCategory?customerId=${id}`,
+    );
+    //console.log('aws spent data saga ===== ', res.data);
+    yield put({type: AWS_SUCCESS, data: res.data});
+  } catch (e) {
+    yield put({type: AWS_ERROR, error: e.message});
+  }
+}
+
+function* awsSpendByCategorySaga() {
+  yield takeEvery(AWS_LOADING, fetchCategoryData);
+}
+
+export default awsSpendByCategorySaga;

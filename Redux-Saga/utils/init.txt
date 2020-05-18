@@ -1,0 +1,52 @@
+export const usersInit = {
+  users: [],
+};
+
+export const postsInit = {
+  posts: [],
+};
+
+export const awsInit = {
+  aws: [],
+};
+
+export const allInit = {
+  all: [],
+};
+
+export const tokenInit = {
+  hasLoggedInOnce: false,
+  idToken: '',
+  accessToken: '',
+  refreshToken: '',
+  accessTokenExpirationDate: '',
+};
+
+export const azureSpentInit = {
+  azureData: [],
+  loading: false,
+  error: '',
+};
+
+export const allSpentInit = {
+  allData: [],
+  loading: false,
+  error: '',
+};
+
+export const awsSpentInit = {
+  awsData: [],
+  loading: false,
+  error: '',
+};
+
+export const RecommendInit = {
+  recData: [],
+  loading: false,
+  error: '',
+};
+
+export const IndexInit = {
+  SelectedIndex: '',
+  value: '',
+};

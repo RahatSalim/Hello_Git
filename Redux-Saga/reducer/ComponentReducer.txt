@@ -1,0 +1,15 @@
+import {IndexInit} from '../utils/init';
+
+const indexReducer = (state = IndexInit, newData) => {
+  if (newData.type == 'INDEX') {
+    state = {
+      ...state,
+      SelectedIndex: newData.payload.index,
+      value: newData.payload.value,
+    };
+  }
+
+  return state;
+};
+
+export default indexReducer;

@@ -1,0 +1,32 @@
+import {put, takeEvery, takeLatest, call} from 'redux-saga/effects';
+import {
+  REC_LOADING,
+  REC_SUCCESS,
+  REC_ERROR,
+} from '../components/actions/recommendactions';
+import ServerCall from '../services/ServerCall';
+import colors from '../config/color';
+
+function* fetchCategoryData(data) {
+  const id = data.payload;
+
+  try {
+    const res = yield call(
+      ServerCall.fnGetReq,
+      'https://cmp-cosmos-api-si.azure-api.net/recommendation/' +
+        `getAzureCostRecommendation?customerId=${id.customerID}&tenantId=${
+          id.tenantID
+        }`,
+    );
+
+    yield put({type: REC_SUCCESS, data: res.data});
+  } catch (e) {
+    yield put({type: REC_ERROR, error: e.message});
+  }
+}
+
+function* recommendSaga() {
+  yield takeEvery(REC_LOADING, fetchCategoryData);
+}
+
+export default recommendSaga;

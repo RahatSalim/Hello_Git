@@ -1,0 +1,28 @@
+import postReducer from './postReducer';
+import awsReducer from './awsReducer';
+import allReducer from './allReducer';
+import userReducer from './userReducer';
+import deleteUserDataReducer from './deleteUserDataReducer';
+import userTokenReducer from './userTokenReducer';
+import azureSpentReducer from './azureSpentReducer';
+import allSpendReducer from './allSpendReducer';
+import awsSpendReducer from './awsSpendReducer';
+import recommendReducer from './recommendReducer';
+import indexReducer from './indexReducer';
+import {combineReducers} from 'redux';
+
+const rootReducer = combineReducers({
+  postReducer,
+  awsReducer,
+  allReducer,
+  userReducer,
+  deleteUserDataReducer,
+  userTokenReducer,
+  azureSpentReducer,
+  allSpendReducer,
+  awsSpendReducer,
+  recommendReducer,
+  indexReducer,
+});
+
+export default rootReducer;
