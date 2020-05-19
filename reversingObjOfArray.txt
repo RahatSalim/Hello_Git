@@ -1,0 +1,9 @@
+var arr = [{value1},{value2},{value3}]
+
+ Sortingdata = arr => {
+    var newMsg = [];
+    for (var i = arr.length - 1; i >= 0; i--) {
+      newMsg.push(arr[i]);
+    }
+  return newMsg;
+  };
